@@ -895,5 +895,383 @@ body {
   color: var(--color-error);
 }
 
+/* ==========================================================================
+   ESTILOS DE PANTALLA DE SORTEO COMPLETA (ShuffleOverlay)
+   ========================================================================== */
+
+.shuffle-screen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #030303;
+  background-image: radial-gradient(circle at 50% 30%, rgba(225, 29, 72, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  overflow: hidden;
+  animation: fade-in-shuffle 0.25s ease-out;
+}
+
+@keyframes fade-in-shuffle {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.shuffle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+  height: 52px;
+  min-height: 52px;
+}
+
+.shuffle-header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shuffle-title-icon {
+  color: var(--color-primary);
+  filter: drop-shadow(0 0 6px var(--glow-color));
+}
+
+.shuffle-header h2 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+}
+
+.btn-skip {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.shuffle-body {
+  display: flex;
+  flex: 1;
+  gap: 24px;
+  margin-top: 20px;
+  overflow: hidden; /* Las columnas internas hacen scroll */
+}
+
+/* Paneles laterales (Bombo y Enfrentamientos creados) */
+.shuffle-side-panel {
+  width: 310px;
+  min-width: 310px;
+  background: rgba(10, 10, 10, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: var(--glass-blur);
+  overflow-y: auto;
+}
+
+.panel-header {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.panel-header h4 {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+/* Bombo de Jugadores (Chips) */
+.bombo-players-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+}
+
+.bombo-player-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  transition: all 0.2s ease;
+}
+
+.bombo-player-chip:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bombo-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 5px var(--playing-glow-color);
+}
+
+.bombo-player-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Escenario Central del Sorteo */
+.shuffle-center-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  position: relative;
+}
+
+.stage-title {
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  padding: 6px 16px;
+  border-radius: 30px;
+}
+
+/* Contenedor Tragamonedas (Slots) */
+.slot-machine-container {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.slot-drum {
+  width: 260px;
+  height: 160px;
+  background: #080808;
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.5);
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.slot-drum.drum-spinning {
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 25px var(--glow-color);
+}
+
+.slot-drum.drum-locked {
+  border-color: var(--color-success);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 25px rgba(16, 185, 129, 0.15);
+}
+
+.slot-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.slot-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--text-placeholder);
+  margin-bottom: 12px;
+}
+
+.slot-player-display {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.drum-spinning .slot-player-display {
+  animation: slot-blur-scroll 0.1s infinite linear;
+}
+
+@keyframes slot-blur-scroll {
+  0% { transform: translateY(-10px); filter: blur(3px); opacity: 0.7; }
+  50% { transform: translateY(10px); filter: blur(3px); opacity: 0.7; }
+  100% { transform: translateY(-10px); filter: blur(3px); opacity: 0.7; }
+}
+
+.drum-locked .slot-player-display {
+  animation: slot-lock-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slot-lock-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Divisor VS central */
+.vs-divider-glow {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--bg-dark-secondary);
+  border: 2px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--text-muted);
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.vs-zap-icon {
+  position: absolute;
+  bottom: -4px;
+  font-size: 10px;
+  color: var(--text-placeholder);
+}
+
+/* Efecto de choque VS cuando ambos jugadores están listos */
+.vs-impact {
+  background: var(--color-primary);
+  border-color: #ffffff;
+  color: #ffffff;
+  transform: scale(1.2) rotate(10deg);
+  box-shadow: 0 0 25px var(--playing-glow-color);
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.vs-impact .vs-zap-icon {
+  color: #ffffff;
+  animation: zap-flash 0.2s infinite alternate;
+}
+
+@keyframes zap-flash {
+  from { filter: drop-shadow(0 0 2px #fff); }
+  to { filter: drop-shadow(0 0 8px #fff); }
+}
+
+/* Botón Iniciar Torneo */
+.btn-start-tournament {
+  padding: 14px 32px;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  animation: pop-start-btn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pop-start-btn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.drawing-status-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  height: 20px;
+}
+
+/* Partidos Emparejados (Drawn Matches List) */
+.drawn-matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.drawn-match-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  animation: slide-in-match-card 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-in-match-card {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.drawn-match-index {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-primary);
+  background: rgba(225, 29, 72, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.drawn-match-players {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.drawn-player-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.drawn-player-icon {
+  color: var(--color-primary);
+  opacity: 0.7;
+}
+
+.drawn-vs-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-placeholder);
+  padding-left: 18px;
+}
+
+.text-bye {
+  color: rgba(255, 255, 255, 0.15) !important;
+}
+
+.text-bye-name {
+  color: var(--text-placeholder) !important;
+  font-style: italic;
+  font-weight: 500;
+}
+
+
 
 

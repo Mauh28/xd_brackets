@@ -4,9 +4,11 @@ import ParticipantInput from './components/ParticipantInput';
 import SavedBrackets from './components/SavedBrackets';
 import BracketViewer from './components/BracketViewer';
 import { generateBracket, setMatchWinner, propagateWinners } from './utils/bracketLogic';
+import ShuffleOverlay from './components/ShuffleOverlay';
 
 export default function App() {
   const [rounds, setRounds] = useState([]);
+  const [shuffleList, setShuffleList] = useState(null);
   const [bracketTitle, setBracketTitle] = useState('');
   const [hoveredParticipantId, setHoveredParticipantId] = useState(null);
   const [savedBrackets, setSavedBrackets] = useState([]);
@@ -203,6 +205,7 @@ export default function App() {
         <aside className="sidebar">
           <ParticipantInput 
             onGenerate={handleGenerate}
+            onShuffleRequest={setShuffleList}
             currentParticipantsCount={
               hasActiveBracket 
                 ? rounds[0].matches.reduce((acc, m) => {
@@ -230,6 +233,17 @@ export default function App() {
           />
         </main>
       </div>
+
+      {shuffleList && (
+        <ShuffleOverlay 
+          names={shuffleList}
+          onComplete={(shuffled) => {
+            setShuffleList(null);
+            handleGenerate(shuffled);
+          }}
+          onClose={() => setShuffleList(null)}
+        />
+      )}
     </div>
   );
 }

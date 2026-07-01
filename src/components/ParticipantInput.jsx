@@ -2,12 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Users, Upload, Shuffle, Trash2, Play, FileSpreadsheet, AlertCircle } from 'lucide-react';
 import { parseExcelParticipants } from '../utils/excelParser';
 
-export default function ParticipantInput({ onGenerate, currentParticipantsCount }) {
+export default function ParticipantInput({ onGenerate, onShuffleRequest, currentParticipantsCount }) {
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(null);
-  const [isShuffling, setIsShuffling] = useState(false);
-  const [shufflingName, setShufflingName] = useState('');
   
   const fileInputRef = useRef(null);
 
@@ -85,38 +83,15 @@ export default function ParticipantInput({ onGenerate, currentParticipantsCount 
     setError(null);
   };
 
-  // Acción para mezclar y generar con animación espectacular
+  // Acción para mezclar e iniciar sorteo interactivo
   const handleShuffleAndGenerate = () => {
     const names = getNamesFromText(inputText);
     if (names.length < 2) {
       setError("Necesitas al menos 2 participantes para generar un torneo.");
       return;
     }
-
-    setIsShuffling(true);
     setError(null);
-
-    // Animación de ruleta
-    let count = 0;
-    const interval = setInterval(() => {
-      const randomIdx = Math.floor(Math.random() * names.length);
-      setShufflingName(names[randomIdx]);
-      count++;
-      
-      if (count > 15) {
-        clearInterval(interval);
-        setIsShuffling(false);
-        setShufflingName('');
-        
-        // Mezclar lista final (Algoritmo Fisher-Yates)
-        const shuffled = [...names];
-        for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-        }
-        onGenerate(shuffled);
-      }
-    }, 80);
+    onShuffleRequest(names);
   };
 
   const handleGenerateDirect = () => {
@@ -168,31 +143,19 @@ export default function ParticipantInput({ onGenerate, currentParticipantsCount 
       <div className="textarea-container">
         <label className="input-label">Nombres (uno por línea)</label>
         <textarea
-          className={`textarea-participants ${isShuffling ? 'animate-shuffle' : ''}`}
+          className="textarea-participants"
           placeholder="Escribe o pega los nombres de los jugadores aquí...&#10;Jugador 1&#10;Jugador 2&#10;Jugador 3"
           value={inputText}
           onChange={handleTextChange}
-          disabled={isShuffling}
         />
       </div>
-
-      {/* Animación de Sorteo / Ruleta */}
-      {isShuffling && (
-        <div className="shuffling-overlay">
-          <div className="shuffling-card">
-            <Shuffle className="shuffling-icon-spin" size={28} />
-            <p className="shuffling-label">Sorteando participantes...</p>
-            <div className="shuffling-name">{shufflingName}</div>
-          </div>
-        </div>
-      )}
 
       {/* Controles de Acción */}
       <div className="action-buttons-grid">
         <button 
           className="btn btn-secondary" 
           onClick={handleClear}
-          disabled={isShuffling || currentNamesList.length === 0}
+          disabled={currentNamesList.length === 0}
         >
           <Trash2 size={16} />
           Limpiar
@@ -200,7 +163,7 @@ export default function ParticipantInput({ onGenerate, currentParticipantsCount 
         <button 
           className="btn btn-secondary" 
           onClick={handleGenerateDirect}
-          disabled={isShuffling || currentNamesList.length < 2}
+          disabled={currentNamesList.length < 2}
         >
           <Play size={16} />
           Ordenar
@@ -211,7 +174,7 @@ export default function ParticipantInput({ onGenerate, currentParticipantsCount 
         className="btn btn-primary w-full pulse-active"
         style={{ marginTop: '12px', width: '100%' }}
         onClick={handleShuffleAndGenerate}
-        disabled={isShuffling || currentNamesList.length < 2}
+        disabled={currentNamesList.length < 2}
       >
         <Shuffle size={16} />
         Aleatorizar y Crear Bracket
