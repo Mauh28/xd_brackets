@@ -297,7 +297,10 @@ export default function App() {
     document.body.appendChild(wrapper);
 
     setTimeout(() => {
-      toPng(wrapper, { backgroundColor: '#020202' })
+      toPng(wrapper, { 
+        backgroundColor: '#020202',
+        skipFonts: true
+      })
         .then((dataUrl) => {
           const link = document.createElement('a');
           const fileName = `${bracketTitle.toLowerCase().replace(/[^a-z0-9]/g, '_')}_bracket.png`;
