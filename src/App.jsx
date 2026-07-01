@@ -5,6 +5,7 @@ import SavedBrackets from './components/SavedBrackets';
 import BracketViewer from './components/BracketViewer';
 import { generateTournament, updateTournamentMatchWinner } from './utils/bracketLogic';
 import ShuffleOverlay from './components/ShuffleOverlay';
+import { toPng } from 'html-to-image';
 
 export default function App() {
   const [tournament, setTournament] = useState(null);
@@ -166,9 +167,51 @@ export default function App() {
     
     downloadAnchor.setAttribute("href", dataStr);
     downloadAnchor.setAttribute("download", fileName);
-    document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+  };
+
+  // Acción: Exportar bracket como imagen PNG
+  const handleExportImage = () => {
+    const node = document.querySelector('.bracket-canvas-container');
+    if (!node) return;
+
+    const originalTransform = node.style.transform;
+    const originalPadding = node.style.paddingRight;
+    const originalBg = node.style.backgroundColor;
+
+    // Ajustar temporalmente los estilos para capturar el lienzo entero al 100% de escala y centrado
+    node.style.transform = 'translate(0px, 0px) scale(1)';
+    node.style.paddingRight = '50px';
+    node.style.backgroundColor = '#020202';
+
+    // Pequeño retardo para asegurar que los estilos temporales se apliquen en el DOM
+    setTimeout(() => {
+      toPng(node, {
+        backgroundColor: '#020202',
+        style: {
+          transform: 'translate(0px, 0px) scale(1)',
+        }
+      })
+        .then((dataUrl) => {
+          const link = document.createElement('a');
+          const fileName = `${bracketTitle.toLowerCase().replace(/[^a-z0-9]/g, '_')}_bracket.png`;
+          link.download = fileName;
+          link.href = dataUrl;
+          link.click();
+
+          // Restaurar estilos originales
+          node.style.transform = originalTransform;
+          node.style.paddingRight = originalPadding;
+          node.style.backgroundColor = originalBg;
+        })
+        .catch((err) => {
+          alert("Error al generar la imagen de la bracket.");
+          node.style.transform = originalTransform;
+          node.style.paddingRight = originalPadding;
+          node.style.backgroundColor = originalBg;
+        });
+    }, 120);
   };
 
   // Acción: Importar desde JSON
@@ -203,6 +246,7 @@ export default function App() {
         onSave={handleSave}
         onReset={handleReset}
         onExport={handleExport}
+        onExportImage={handleExportImage}
         onImportJson={handleImportJson}
         hasActiveBracket={hasActiveBracket}
       />

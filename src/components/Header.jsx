@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Save, RotateCcw, Download, Upload, Trophy, Edit3 } from 'lucide-react';
+import { Save, RotateCcw, Download, Upload, Trophy, Edit3, Image } from 'lucide-react';
 
 export default function Header({ 
   title, 
@@ -7,6 +7,7 @@ export default function Header({
   onSave, 
   onReset, 
   onExport, 
+  onExportImage,
   onImportJson,
   hasActiveBracket
 }) {
@@ -82,7 +83,16 @@ export default function Header({
               title="Exportar torneo actual como archivo JSON"
             >
               <Download size={16} />
-              <span>Exportar</span>
+              <span>Exportar JSON</span>
+            </button>
+
+            <button 
+              className="btn btn-secondary" 
+              onClick={onExportImage}
+              title="Descargar bracket como imagen PNG"
+            >
+              <Image size={16} />
+              <span>Guardar Imagen</span>
             </button>
 
             <button 

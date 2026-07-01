@@ -67,28 +67,30 @@ export default function ShuffleOverlay({ names, onComplete, onClose }) {
           // Siguiente emparejamiento
           timerRef.current = setTimeout(() => {
             startNextDraw(idx + 1, nextRemainingAfterP1, nextDraws);
-          }, 1000);
+          }, 1500);
         }, 500);
       } else {
-        // 2. Iniciar Slot 2
-        setActiveSlot(2);
-        animateSlot('p2', targetP2, nextRemainingAfterP1, () => {
-          const nextRemainingAfterP2 = nextRemainingAfterP1.filter(n => n !== targetP2);
-          setRemainingPlayers(nextRemainingAfterP2);
-          setActiveSlot(null);
+        // Pausa dramática para crear suspenso antes de sortear al rival (oponente 2)
+        timerRef.current = setTimeout(() => {
+          setActiveSlot(2);
+          animateSlot('p2', targetP2, nextRemainingAfterP1, () => {
+            const nextRemainingAfterP2 = nextRemainingAfterP1.filter(n => n !== targetP2);
+            setRemainingPlayers(nextRemainingAfterP2);
+            setActiveSlot(null);
 
-          // Ambos listos: destello e impacto visual
-          timerRef.current = setTimeout(() => {
-            const finalDraw = { p1: targetP1, p2: targetP2 };
-            const nextDraws = [...currentDraws, finalDraw];
-            setDraws(nextDraws);
-
-            // Siguiente emparejamiento
+            // Ambos listos: destello e impacto del enfrentamiento armado
             timerRef.current = setTimeout(() => {
-              startNextDraw(idx + 1, nextRemainingAfterP2, nextDraws);
-            }, 1000);
-          }, 600);
-        });
+              const finalDraw = { p1: targetP1, p2: targetP2 };
+              const nextDraws = [...currentDraws, finalDraw];
+              setDraws(nextDraws);
+
+              // Pausa prolongada para saborear el duelo antes del siguiente
+              timerRef.current = setTimeout(() => {
+                startNextDraw(idx + 1, nextRemainingAfterP2, nextDraws);
+              }, 2000); // 2 segundos de pausa de celebración
+            }, 800); // 800ms de impacto visual
+          });
+        }, 800); // 800ms de suspenso entre J1 y J2
       }
     });
   };
