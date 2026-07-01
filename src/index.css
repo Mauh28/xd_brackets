@@ -1402,6 +1402,105 @@ input:checked + .slider:before {
   justify-content: center;
 }
 
+/* ==========================================================================
+   ESTILOS DE EXPORTACIÓN A IMAGEN (Ocultos por defecto, visibles al exportar)
+   ========================================================================== */
+
+.export-only-header {
+  display: none;
+}
+
+.export-only-footer {
+  display: none;
+}
+
+/* Estado de captura forzado por JS */
+.bracket-export-wrapper.is-exporting {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  background: radial-gradient(circle at 50% 0%, rgba(225, 29, 72, 0.12) 0%, #020202 75%) !important;
+  background-color: #020202 !important;
+  width: max-content !important;
+  height: max-content !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-only-header {
+  display: block !important;
+  width: 100% !important;
+  text-align: center !important;
+  padding: 45px 60px 28px 60px !important;
+  border-bottom: 2px solid rgba(225, 29, 72, 0.45) !important;
+  box-sizing: border-box !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-brand {
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: lowercase !important;
+  color: rgba(225, 29, 72, 0.85) !important;
+  margin-bottom: 8px !important;
+  font-family: var(--font-family) !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-title {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 25px rgba(225, 29, 72, 0.45) !important;
+  font-family: var(--font-family) !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-subtitle {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.35) !important;
+  margin-top: 8px !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  font-family: var(--font-family) !important;
+}
+
+.bracket-export-wrapper.is-exporting .bracket-canvas-container {
+  transform: translate(0px, 0px) scale(1) !important;
+  padding: 50px 80px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-only-footer {
+  display: block !important;
+  width: 100% !important;
+  text-align: right !important;
+  padding: 20px 60px 35px 60px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+  box-sizing: border-box !important;
+  margin-top: auto !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-date {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.25) !important;
+  letter-spacing: 0.05em !important;
+  font-family: var(--font-family) !important;
+}
+
+.bracket-export-wrapper.is-exporting .export-powered {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  color: rgba(225, 29, 72, 0.4) !important;
+  margin-top: 4px !important;
+  letter-spacing: 0.05em !important;
+  font-family: var(--font-family) !important;
+}
+
+
 
 
 

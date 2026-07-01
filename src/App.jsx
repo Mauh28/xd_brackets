@@ -171,131 +171,15 @@ export default function App() {
     downloadAnchor.remove();
   };
 
-  // Acción: Exportar bracket como imagen PNG (formato profesional centrado con título, fondo glow y fecha)
+  // Acción: Exportar bracket como imagen PNG (usando clase temporal en el DOM para evitar clones vacíos)
   const handleExportImage = () => {
-    const canvasNode = document.querySelector('.bracket-canvas-container');
-    if (!canvasNode) return;
+    const wrapper = document.getElementById('bracket-export-area');
+    if (!wrapper) return;
 
-    // 1. Crear un contenedor wrapper invisible fuera de pantalla con flexbox centrado y gradiente de fondo
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = `
-      position: fixed;
-      left: -99999px;
-      top: 0;
-      background: radial-gradient(circle at 50% 0%, rgba(225, 29, 72, 0.12) 0%, #020202 75%);
-      background-color: #020202;
-      padding: 0;
-      font-family: 'Outfit', 'Inter', sans-serif;
-      color: #e2e2e2;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      box-sizing: border-box;
-    `;
+    // 1. Activar clase de exportación para forzar diseño centrado y estructurado
+    wrapper.classList.add('is-exporting');
 
-    // 2. Cabecera con título del torneo
-    const header = document.createElement('div');
-    header.style.cssText = `
-      width: 100%;
-      text-align: center;
-      padding: 45px 60px 28px 60px;
-      border-bottom: 2px solid rgba(225, 29, 72, 0.45);
-      box-sizing: border-box;
-    `;
-    const brandLine = document.createElement('div');
-    brandLine.textContent = 'xd_brackets';
-    brandLine.style.cssText = `
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.18em;
-      text-transform: lowercase;
-      color: rgba(225, 29, 72, 0.85);
-      margin-bottom: 8px;
-    `;
-    const titleLine = document.createElement('div');
-    titleLine.textContent = bracketTitle || 'Torneo sin título';
-    titleLine.style.cssText = `
-      font-size: 36px;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      color: #ffffff;
-      text-shadow: 0 0 25px rgba(225, 29, 72, 0.45);
-    `;
-
-    const typeLine = document.createElement('div');
-    typeLine.textContent = tournament?.isDoubleElimination ? 'Doble Eliminación (Con Perdedores)' : 'Eliminación Directa';
-    typeLine.style.cssText = `
-      font-size: 14px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.35);
-      margin-top: 8px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    `;
-
-    header.appendChild(brandLine);
-    header.appendChild(titleLine);
-    header.appendChild(typeLine);
-    wrapper.appendChild(header);
-
-    // 3. Contenido del bracket (clon del canvas), centrado
-    const bracketClone = canvasNode.cloneNode(true);
-    bracketClone.style.cssText = `
-      transform: translate(0px, 0px) scale(1);
-      transform-origin: 0 0;
-      padding: 50px 80px;
-      display: inline-block;
-      background: transparent;
-      margin: 0 auto;
-    `;
-    wrapper.appendChild(bracketClone);
-
-    // 4. Pie de página con fecha alineada a la derecha
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    const timeStr = now.toLocaleTimeString('es-MX', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-
-    const footer = document.createElement('div');
-    footer.style.cssText = `
-      width: 100%;
-      text-align: right;
-      padding: 20px 60px 35px 60px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      box-sizing: border-box;
-      margin-top: auto;
-    `;
-    const dateLine = document.createElement('div');
-    dateLine.textContent = `${dateStr} — ${timeStr}`;
-    dateLine.style.cssText = `
-      font-size: 12px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.25);
-      letter-spacing: 0.05em;
-    `;
-    const poweredLine = document.createElement('div');
-    poweredLine.textContent = 'Generado con xd_brackets';
-    poweredLine.style.cssText = `
-      font-size: 10px;
-      font-weight: 600;
-      color: rgba(225, 29, 72, 0.4);
-      margin-top: 4px;
-      letter-spacing: 0.05em;
-    `;
-    footer.appendChild(dateLine);
-    footer.appendChild(poweredLine);
-    wrapper.appendChild(footer);
-
-    // 5. Montar temporalmente en el DOM para medir y capturar
-    document.body.appendChild(wrapper);
-
+    // 2. Capturar con html-to-image (skipFonts evita SecurityErrors de Google Fonts)
     setTimeout(() => {
       toPng(wrapper, { 
         backgroundColor: '#020202',
@@ -308,11 +192,13 @@ export default function App() {
           link.href = dataUrl;
           link.click();
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Error exporting image:", err);
           alert('Error al generar la imagen de la bracket.');
         })
         .finally(() => {
-          document.body.removeChild(wrapper);
+          // 3. Restaurar estado visual original para el usuario
+          wrapper.classList.remove('is-exporting');
         });
     }, 150);
   };
@@ -381,6 +267,7 @@ export default function App() {
         <main className="main-content">
           <BracketViewer 
             tournament={tournament}
+            bracketTitle={bracketTitle}
             hoveredId={hoveredParticipantId}
             onHover={setHoveredParticipantId}
             onSelectWinner={handleSelectWinner}

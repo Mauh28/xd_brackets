@@ -4,6 +4,7 @@ import MatchNode from './MatchNode';
 
 export default function BracketViewer({ 
   tournament, 
+  bracketTitle,
   hoveredId, 
   onHover, 
   onSelectWinner 
@@ -99,6 +100,17 @@ export default function BracketViewer({
   const { isDoubleElimination, winnersRounds, losersRounds, grandFinal } = tournament;
   const dimensions = { matchHeight, baseGap, connectorWidth, roundWidth };
 
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  const timeStr = now.toLocaleTimeString('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
   // Renderiza una columna de ronda
   const renderRoundColumn = (round, roundType, totalRoundCount) => {
     const { paddingTop } = getRoundSpacing(round.index, roundType);
@@ -168,15 +180,26 @@ export default function BracketViewer({
         <span>Mantén presionado y arrastra para mover</span>
       </div>
 
-      {/* Lienzo del Bracket con Zoom y Desplazamiento */}
-      <div 
-        className="bracket-canvas-container"
-        style={{
-          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: '0 0',
-          paddingRight: '100px'
-        }}
-      >
+      {/* Contenedor unificado de exportación */}
+      <div className="bracket-export-wrapper" id="bracket-export-area">
+        {/* Cabecera de Exportación */}
+        <div className="export-only-header">
+          <div className="export-brand">xd_brackets</div>
+          <div className="export-title">{bracketTitle || 'Torneo sin título'}</div>
+          <div className="export-subtitle">
+            {isDoubleElimination ? 'Doble Eliminación (Con Perdedores)' : 'Eliminación Directa'}
+          </div>
+        </div>
+
+        {/* Lienzo del Bracket con Zoom y Desplazamiento */}
+        <div 
+          className="bracket-canvas-container"
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transformOrigin: '0 0',
+            paddingRight: '100px'
+          }}
+        >
         {!isDoubleElimination ? (
           // Vista Estándar (Single Elimination)
           <div className="single-elim-layout" style={{ display: 'flex', gap: `${connectorWidth}px` }}>
@@ -255,6 +278,13 @@ export default function BracketViewer({
             )}
           </div>
         )}
+      </div>
+
+      {/* Pie de página de Exportación */}
+      <div className="export-only-footer">
+        <div className="export-date">{dateStr} — {timeStr}</div>
+        <div className="export-powered">Generado con xd_brackets</div>
+      </div>
       </div>
     </div>
   );
