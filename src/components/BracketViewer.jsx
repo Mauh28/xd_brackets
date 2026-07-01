@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Move } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Move, Users } from 'lucide-react';
 import MatchNode from './MatchNode';
 
 export default function BracketViewer({ 
