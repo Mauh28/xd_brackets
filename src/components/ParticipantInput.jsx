@@ -6,6 +6,7 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(null);
+  const [isDoubleElim, setIsDoubleElim] = useState(false);
   
   const fileInputRef = useRef(null);
 
@@ -91,7 +92,7 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
       return;
     }
     setError(null);
-    onShuffleRequest(names);
+    onShuffleRequest(names, isDoubleElim);
   };
 
   const handleGenerateDirect = () => {
@@ -100,7 +101,7 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
       setError("Necesitas al menos 2 participantes para generar un torneo.");
       return;
     }
-    onGenerate(names);
+    onGenerate(names, isDoubleElim);
   };
 
   const currentNamesList = getNamesFromText(inputText);
@@ -148,6 +149,19 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
           value={inputText}
           onChange={handleTextChange}
         />
+      </div>
+
+      {/* Toggle de Doble Eliminación */}
+      <div className="double-elim-toggle-container">
+        <label className="switch">
+          <input 
+            type="checkbox" 
+            checked={isDoubleElim}
+            onChange={(e) => setIsDoubleElim(e.target.checked)}
+          />
+          <span className="slider round"></span>
+        </label>
+        <span className="switch-label">Doble Eliminación (Perdedores)</span>
       </div>
 
       {/* Controles de Acción */}

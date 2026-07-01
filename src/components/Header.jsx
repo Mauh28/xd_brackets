@@ -34,7 +34,7 @@ export default function Header({
     <header className="app-header">
       <div className="header-brand">
         <Trophy className="header-logo" size={24} />
-        <span className="brand-name">XD_BRACKETS</span>
+        <span className="brand-name">xd_brackets</span>
       </div>
 
       <div className="header-title-container">
@@ -88,7 +88,7 @@ export default function Header({
             <button 
               className="btn btn-secondary" 
               onClick={onReset}
-              title="Reiniciar todos los enfrentamientos"
+              title="Reiniciar todos los matches de la bracket"
             >
               <RotateCcw size={16} />
               <span>Reiniciar</span>

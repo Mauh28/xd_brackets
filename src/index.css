@@ -1272,6 +1272,137 @@ body {
   font-weight: 500;
 }
 
+/* ==========================================================================
+   ESTILOS DE DOBLE ELIMINACIÓN Y TOGGLE
+   ========================================================================== */
+
+.double-elim-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.switch-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  user-select: none;
+}
+
+/* Switch - Contenedor del control deslizante */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
+  min-width: 38px;
+}
+
+/* Ocultar checkbox por defecto */
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* El slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: .25s ease;
+  border: 1px solid var(--border-color);
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-muted);
+  transition: .25s ease;
+}
+
+input:checked + .slider {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+  background-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+}
+
+.slider.round {
+  border-radius: 20px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Títulos y Envolturas de Bloque de Brackets */
+.bracket-block-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.bracket-block-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  border-left: 3px solid var(--color-primary);
+  padding-left: 10px;
+  text-transform: uppercase;
+}
+
+.grand-final-stage-wrapper {
+  border-left: 1px dashed var(--border-color);
+  padding-left: 40px;
+}
+
+.grand-final-node {
+  margin-bottom: 0 !important;
+}
+
+.grand-final-card {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 25px rgba(225, 29, 72, 0.25) !important;
+}
+
+.grand-final-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: var(--color-primary);
+  color: #ffffff;
+  padding: 4px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
 
 
 

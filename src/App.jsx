@@ -3,12 +3,13 @@ import Header from './components/Header';
 import ParticipantInput from './components/ParticipantInput';
 import SavedBrackets from './components/SavedBrackets';
 import BracketViewer from './components/BracketViewer';
-import { generateBracket, setMatchWinner, propagateWinners } from './utils/bracketLogic';
+import { generateTournament, updateTournamentMatchWinner } from './utils/bracketLogic';
 import ShuffleOverlay from './components/ShuffleOverlay';
 
 export default function App() {
-  const [rounds, setRounds] = useState([]);
+  const [tournament, setTournament] = useState(null);
   const [shuffleList, setShuffleList] = useState(null);
+  const [isDoubleElimTemp, setIsDoubleElimTemp] = useState(false);
   const [bracketTitle, setBracketTitle] = useState('');
   const [hoveredParticipantId, setHoveredParticipantId] = useState(null);
   const [savedBrackets, setSavedBrackets] = useState([]);
@@ -32,10 +33,10 @@ export default function App() {
     localStorage.setItem('xd_brackets_saved', JSON.stringify(newSavedList));
   };
 
-  // Acción: Generar nueva bracket
-  const handleGenerate = (names) => {
-    const generatedRounds = generateBracket(names);
-    setRounds(generatedRounds);
+  // Acción: Generar nueva bracket (soporta simple y doble eliminación)
+  const handleGenerate = (names, isDoubleElim = false) => {
+    const generated = generateTournament(names, isDoubleElim);
+    setTournament(generated);
     
     const count = names.length;
     const defaultTitle = `Torneo de ${count} Participantes`;
@@ -45,53 +46,39 @@ export default function App() {
     setCurrentBracketId(null);
   };
 
-  // Acción: Avanzar participante
-  const handleSelectWinner = (matchId, winner) => {
-    const updatedRounds = setMatchWinner(rounds, matchId, winner);
-    setRounds(updatedRounds);
+  // Acción: Iniciar sorteo interactivo guardando el flag temporalmente
+  const handleShuffleRequest = (names, isDoubleElim) => {
+    setShuffleList(names);
+    setIsDoubleElimTemp(isDoubleElim);
   };
 
-  // Acción: Reiniciar ganadores del torneo actual (mantiene emparejamientos originales)
+  // Acción: Avanzar participante
+  const handleSelectWinner = (matchId, winner) => {
+    const updated = updateTournamentMatchWinner(tournament, matchId, winner);
+    setTournament(updated);
+  };
+
+  // Acción: Reiniciar ganadores del torneo actual (mantiene emparejamientos originales de la Ronda 0)
   const handleReset = () => {
-    if (rounds.length === 0) return;
-    if (!window.confirm("¿Seguro que quieres reiniciar el progreso de este torneo? Se borrarán todos los ganadores.")) {
+    if (!tournament) return;
+    if (!window.confirm("¿Seguro que quieres reiniciar el progreso de este torneo? Se borrarán todos los ganadores y avances.")) {
       return;
     }
 
-    const updatedRounds = JSON.parse(JSON.stringify(rounds));
-    
-    // Limpiar ganadores y marcadores
-    updatedRounds.forEach(round => {
-      round.matches.forEach(match => {
-        match.winner = null;
-        match.score1 = null;
-        match.score2 = null;
-        if (round.index > 0) {
-          match.p1 = null;
-          match.p2 = null;
-        }
-      });
+    // Obtener los nombres iniciales a partir de la Ronda 0 de ganadores
+    const initialNames = [];
+    tournament.winnersRounds[0].matches.forEach(match => {
+      if (match.p1 && !match.p1.isBye) initialNames.push(match.p1.name);
+      if (match.p2 && !match.p2.isBye) initialNames.push(match.p2.name);
     });
 
-    // Reestablecer ganadores por BYE en la ronda 0
-    updatedRounds[0].matches.forEach(match => {
-      if (match.p1?.isBye && match.p2?.isBye) {
-        match.winner = null;
-      } else if (match.p1?.isBye) {
-        match.winner = match.p2;
-      } else if (match.p2?.isBye) {
-        match.winner = match.p1;
-      }
-    });
-
-    // Propagar byes
-    propagateWinners(updatedRounds);
-    setRounds(updatedRounds);
+    const resetTournament = generateTournament(initialNames, tournament.isDoubleElimination);
+    setTournament(resetTournament);
   };
 
   // Acción: Guardar torneo actual
   const handleSave = () => {
-    if (rounds.length === 0) return;
+    if (!tournament || tournament.winnersRounds.length === 0) return;
 
     const titleToSave = bracketTitle.trim() || 'Torneo sin título';
     const bracketId = currentBracketId || Math.random().toString(36).substr(2, 9);
@@ -99,7 +86,8 @@ export default function App() {
     const bracketData = {
       id: bracketId,
       title: titleToSave,
-      rounds: rounds,
+      tournament: tournament,
+      rounds: tournament.winnersRounds, // backward compatibility
       updatedAt: Date.now()
     };
 
@@ -119,7 +107,6 @@ export default function App() {
     setCurrentBracketId(bracketId);
     setBracketTitle(titleToSave); // Actualizar por si se recortaron espacios
     
-    // Breve alerta visual / feedback
     alert(`Torneo "${titleToSave}" guardado correctamente.`);
   };
 
@@ -128,7 +115,17 @@ export default function App() {
     const bracket = savedBrackets.find(b => b.id === id);
     if (!bracket) return;
 
-    setRounds(bracket.rounds);
+    if (bracket.tournament) {
+      setTournament(bracket.tournament);
+    } else {
+      // Compatibilidad con formatos guardados antiguos
+      setTournament({
+        isDoubleElimination: false,
+        winnersRounds: bracket.rounds,
+        losersRounds: [],
+        grandFinal: null
+      });
+    }
     setBracketTitle(bracket.title);
     setCurrentBracketId(bracket.id);
   };
@@ -153,11 +150,12 @@ export default function App() {
 
   // Acción: Exportar como JSON
   const handleExport = () => {
-    if (rounds.length === 0) return;
+    if (!tournament) return;
 
     const exportData = {
       title: bracketTitle,
-      rounds: rounds,
+      tournament: tournament,
+      rounds: tournament.winnersRounds, // backward compatibility
       exportedAt: Date.now()
     };
 
@@ -175,18 +173,27 @@ export default function App() {
 
   // Acción: Importar desde JSON
   const handleImportJson = (data) => {
-    if (!data.title || !data.rounds) {
-      alert("El formato del archivo JSON no es compatible con XD_BRACKETS.");
+    const importedTournament = data.tournament ? data.tournament : (
+      data.rounds ? {
+        isDoubleElimination: false,
+        winnersRounds: data.rounds,
+        losersRounds: [],
+        grandFinal: null
+      } : null
+    );
+
+    if (!data.title || !importedTournament) {
+      alert("El formato del archivo JSON no es compatible con xd_brackets.");
       return;
     }
 
-    setRounds(data.rounds);
+    setTournament(importedTournament);
     setBracketTitle(data.title);
-    setCurrentBracketId(null); // Importado como nuevo torneo para que no pise existentes
+    setCurrentBracketId(null); // Importado como nuevo torneo
     alert(`Torneo "${data.title}" importado correctamente.`);
   };
 
-  const hasActiveBracket = rounds.length > 0;
+  const hasActiveBracket = tournament !== null && tournament.winnersRounds.length > 0;
 
   return (
     <div id="root">
@@ -205,10 +212,10 @@ export default function App() {
         <aside className="sidebar">
           <ParticipantInput 
             onGenerate={handleGenerate}
-            onShuffleRequest={setShuffleList}
+            onShuffleRequest={handleShuffleRequest}
             currentParticipantsCount={
               hasActiveBracket 
-                ? rounds[0].matches.reduce((acc, m) => {
+                ? tournament.winnersRounds[0].matches.reduce((acc, m) => {
                     if (m.p1 && !m.p1.isBye) acc++;
                     if (m.p2 && !m.p2.isBye) acc++;
                     return acc;
@@ -226,7 +233,7 @@ export default function App() {
         {/* Visualizador central */}
         <main className="main-content">
           <BracketViewer 
-            rounds={rounds}
+            tournament={tournament}
             hoveredId={hoveredParticipantId}
             onHover={setHoveredParticipantId}
             onSelectWinner={handleSelectWinner}
@@ -239,7 +246,7 @@ export default function App() {
           names={shuffleList}
           onComplete={(shuffled) => {
             setShuffleList(null);
-            handleGenerate(shuffled);
+            handleGenerate(shuffled, isDoubleElimTemp);
           }}
           onClose={() => setShuffleList(null)}
         />

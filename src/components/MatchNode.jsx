@@ -6,6 +6,8 @@ export default function MatchNode({
   roundIndex, 
   matchIndex, 
   totalRounds,
+  roundType, // 'winners' | 'losers'
+  isDoubleElimination,
   hoveredId, 
   onHover, 
   onSelectWinner,
@@ -14,12 +16,24 @@ export default function MatchNode({
   const { p1, p2, winner, id: matchId } = match;
   const { matchHeight, connectorWidth } = dimensions;
 
+  const isWinners = roundType === 'winners' || roundType === undefined;
+  const effectiveRoundIndex = isWinners ? roundIndex : Math.floor(roundIndex / 2);
+
   // Calcular las dimensiones del conector
   const G = dimensions.baseGap;
   const H = matchHeight;
-  const gap = (H + G) * Math.pow(2, roundIndex) - H;
-  const connectorHeight = (gap + H) / 2;
+  const gap = (H + G) * Math.pow(2, effectiveRoundIndex) - H;
 
+  // Un conector es recto horizontal si:
+  // 1. Es una ronda de perdedores par (0, 2, ...) donde avanza 1-a-1
+  // 2. O si es el partido final (Winners Final o Losers Final) que avanza hacia la Gran Final
+  const isStraightConnector = (!isWinners && roundIndex % 2 === 0) || 
+    (isDoubleElimination && (
+      (isWinners && roundIndex === totalRounds - 1) || 
+      (!isWinners && roundIndex === totalRounds - 1)
+    ));
+
+  const connectorHeight = isStraightConnector ? 4 : (gap + H) / 2;
   const isEven = matchIndex % 2 === 0;
 
   // Determinar si una ranura de participante está resaltada
@@ -50,17 +64,32 @@ export default function MatchNode({
   const isP1Winner = winner && p1 && winner.id === p1.id;
   const isP2Winner = winner && p2 && winner.id === p2.id;
 
+  const isGrandFinal = match.isGrandFinal === true;
+  
+  // Dibujar conector para todos los partidos excepto la Gran Final
+  const showConnector = !isGrandFinal && (
+    isDoubleElimination 
+      ? true 
+      : (roundIndex < totalRounds - 1)
+  );
+
   return (
     <div 
-      className="match-node-wrapper"
+      className={`match-node-wrapper ${isGrandFinal ? 'grand-final-node' : ''}`}
       style={{ 
         height: `${H}px`,
-        marginBottom: `${gap}px`,
+        marginBottom: isGrandFinal ? '0px' : `${gap}px`,
         position: 'relative'
       }}
     >
-      <div className={`match-card ${winner ? 'has-winner' : ''}`}>
-        
+      <div className={`match-card ${winner ? 'has-winner' : ''} ${isGrandFinal ? 'grand-final-card' : ''}`}>
+        {isGrandFinal && (
+          <div className="grand-final-badge">
+            <Award size={10} style={{ marginRight: '3px' }} />
+            GRAN FINAL
+          </div>
+        )}
+
         {/* Jugador 1 */}
         <div 
           className={`participant-slot ${p1 ? (p1.isBye ? 'bye-slot' : '') : 'empty-slot'} ${isP1Hovered ? 'path-highlight' : ''} ${isP1Winner ? 'winner-slot' : winner ? 'loser-slot' : ''}`}
@@ -91,7 +120,7 @@ export default function MatchNode({
       </div>
 
       {/* Conectores SVG entre rondas */}
-      {roundIndex < totalRounds - 1 && (
+      {showConnector && (
         <div 
           className="connector-svg-container"
           style={{
@@ -99,13 +128,24 @@ export default function MatchNode({
             width: `${connectorWidth}px`,
             height: `${connectorHeight}px`,
             right: `-${connectorWidth}px`,
-            top: isEven ? `${H / 2}px` : `${H / 2 - connectorHeight}px`,
+            top: isStraightConnector 
+              ? `${H / 2 - 2}px` 
+              : (isEven ? `${H / 2}px` : `${H / 2 - connectorHeight}px`),
             pointerEvents: 'none',
             zIndex: 1
           }}
         >
           <svg width="100%" height="100%">
-            {isEven ? (
+            {isStraightConnector ? (
+              // Línea recta horizontal
+              <line 
+                x1="0" 
+                y1="2" 
+                x2={connectorWidth} 
+                y2="2"
+                className={`connector-path ${isConnectorHighlighted ? 'active' : ''}`}
+              />
+            ) : isEven ? (
               // Conector que va hacia abajo
               <path 
                 d={`M 0,1 
