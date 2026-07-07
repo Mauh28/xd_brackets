@@ -11,6 +11,7 @@ export default function MatchNode({
   hoveredId, 
   onHover, 
   onSelectWinner,
+  onParticipantContextMenu,
   dimensions
 }) {
   const { p1, p2, winner, id: matchId } = match;
@@ -63,6 +64,46 @@ export default function MatchNode({
   const isByeMatch = (p1?.isBye || p2?.isBye);
   const isP1Winner = winner && p1 && winner.id === p1.id;
   const isP2Winner = winner && p2 && winner.id === p2.id;
+  
+  // Temporizadores para pulsación larga táctil (mobile)
+  let touchTimeout = null;
+
+  const handleContextMenu = (e, participant) => {
+    if (!participant || participant.isBye) return;
+    e.preventDefault();
+    onParticipantContextMenu(e, participant);
+  };
+
+  const handleTouchStart = (e, participant) => {
+    if (!participant || participant.isBye) return;
+    const touch = e.touches[0];
+    const clientX = touch.clientX;
+    const clientY = touch.clientY;
+    
+    // Cancelar cualquier timeout anterior
+    if (touchTimeout) clearTimeout(touchTimeout);
+    
+    touchTimeout = setTimeout(() => {
+      onParticipantContextMenu(
+        { clientX, clientY, preventDefault: () => {} },
+        participant
+      );
+    }, 600); // 600ms de pulsación larga
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimeout) {
+      clearTimeout(touchTimeout);
+      touchTimeout = null;
+    }
+  };
+
+  const handleTouchMove = () => {
+    if (touchTimeout) {
+      clearTimeout(touchTimeout);
+      touchTimeout = null;
+    }
+  };
 
   const isGrandFinal = match.isGrandFinal === true;
   
@@ -96,6 +137,10 @@ export default function MatchNode({
           onMouseEnter={() => handleMouseEnter(p1)}
           onMouseLeave={handleMouseLeave}
           onClick={() => handleWinnerClick(p1)}
+          onContextMenu={(e) => handleContextMenu(e, p1)}
+          onTouchStart={(e) => handleTouchStart(e, p1)}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
         >
           <span className="participant-name">
             {p1 ? p1.name : <span className="placeholder-text">Esperando...</span>}
@@ -111,6 +156,10 @@ export default function MatchNode({
           onMouseEnter={() => handleMouseEnter(p2)}
           onMouseLeave={handleMouseLeave}
           onClick={() => handleWinnerClick(p2)}
+          onContextMenu={(e) => handleContextMenu(e, p2)}
+          onTouchStart={(e) => handleTouchStart(e, p2)}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchMove}
         >
           <span className="participant-name">
             {p2 ? p2.name : <span className="placeholder-text">Esperando...</span>}

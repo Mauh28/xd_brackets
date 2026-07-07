@@ -404,12 +404,10 @@ const clearLoserPathFromWb = (tournament, wbRoundIdx, wbMatchIdx) => {
 
   let targetLbRoundIdx = 0;
   let targetLbMatchIdx = 0;
-  let slotKey = 'p1';
 
   if (wbRoundIdx === 0) {
     targetLbRoundIdx = 0;
     targetLbMatchIdx = Math.floor(wbMatchIdx / 2);
-    slotKey = wbMatchIdx % 2 === 0 ? 'p1' : 'p2';
   } else {
     // wbRoundIdx > 0
     const R = tournament.winnersRounds.length;
@@ -417,11 +415,9 @@ const clearLoserPathFromWb = (tournament, wbRoundIdx, wbMatchIdx) => {
       // Final ganadores
       targetLbRoundIdx = losersRounds.length - 1; // Final perdedores
       targetLbMatchIdx = 0;
-      slotKey = 'p2';
     } else {
       targetLbRoundIdx = 2 * wbRoundIdx - 1;
       targetLbMatchIdx = wbMatchIdx;
-      slotKey = 'p2';
     }
   }
 
@@ -434,3 +430,78 @@ const clearLoserPathFromWb = (tournament, wbRoundIdx, wbMatchIdx) => {
     clearFutureLosers(losersRounds, targetLbRoundIdx, targetLbMatchIdx);
   }
 };
+
+/**
+ * Verifica si el torneo ya ha comenzado (es decir, si algún partido tiene un ganador
+ * que no provenga de un avance automático por BYE).
+ */
+export const hasTournamentStarted = (tournament) => {
+  if (!tournament || !tournament.winnersRounds) return false;
+
+  const hasStarted = tournament.winnersRounds.some(round =>
+    round.matches.some(match => {
+      if (!match.winner) return false;
+      const isP1Bye = match.p1?.isBye || false;
+      const isP2Bye = match.p2?.isBye || !match.p2;
+      return !isP1Bye && !isP2Bye;
+    })
+  );
+
+  return hasStarted;
+};
+
+/**
+ * Intercambia las posiciones de dos participantes en la primera ronda (Winners Round 0)
+ * y propaga los cambios a lo largo de todo el torneo.
+ */
+export const swapTournamentParticipants = (tournament, p1Id, p2Id) => {
+  const updated = JSON.parse(JSON.stringify(tournament));
+  const round0 = updated.winnersRounds[0];
+
+  let p1Slot = null;
+  let p2Slot = null;
+
+  round0.matches.forEach(match => {
+    if (match.p1 && match.p1.id === p1Id) p1Slot = { match, key: 'p1' };
+    if (match.p2 && match.p2.id === p1Id) p1Slot = { match, key: 'p2' };
+    if (match.p1 && match.p1.id === p2Id) p2Slot = { match, key: 'p1' };
+    if (match.p2 && match.p2.id === p2Id) p2Slot = { match, key: 'p2' };
+  });
+
+  if (p1Slot && p2Slot) {
+    // Intercambiar participantes
+    const temp = p1Slot.match[p1Slot.key];
+    p1Slot.match[p1Slot.key] = p2Slot.match[p2Slot.key];
+    p2Slot.match[p2Slot.key] = temp;
+
+    // Recalcular ganadores automáticos por BYE para estos dos partidos
+    const resetMatchWinner = (match) => {
+      match.winner = null;
+      if (match.p1 && match.p2) {
+        if (match.p1.isBye && match.p2.isBye) {
+          match.winner = null;
+        } else if (match.p1.isBye) {
+          match.winner = match.p2;
+        } else if (match.p2.isBye) {
+          match.winner = match.p1;
+        }
+      } else if (match.p1) {
+        match.winner = match.p1;
+      }
+    };
+
+    resetMatchWinner(p1Slot.match);
+    resetMatchWinner(p2Slot.match);
+
+    // Propagar cambios
+    propagateTournamentWinners(
+      updated.winnersRounds,
+      updated.losersRounds,
+      updated.grandFinal,
+      updated.isDoubleElimination
+    );
+  }
+
+  return updated;
+};
+

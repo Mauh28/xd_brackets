@@ -483,7 +483,7 @@ body {
 }
 
 .zoom-controls {
-  position: absolute;
+  position: fixed;
   bottom: 24px;
   right: 24px;
   display: flex;
@@ -496,6 +496,14 @@ body {
   gap: 10px;
   z-index: 100;
   box-shadow: var(--shadow);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s ease;
+}
+
+.zoom-controls.hidden {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .zoom-indicator {
@@ -1580,4 +1588,438 @@ input:checked + .slider:before {
   font-size: 11px;
 }
 
+/* ==========================================================================
+   BOTÓN HAMBURGUESA (oculto en desktop)
+   ========================================================================== */
 
+.sidebar-toggle-btn {
+  display: none; /* Visible solo en móvil via media query */
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 200;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--color-primary);
+  color: #fff;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(225, 29, 72, 0.4);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+/* ==========================================================================
+   GUÍA RÁPIDA DE GESTOS (COACH MARKS) Y MENÚ CONTEXTUAL (SWAP)
+   ========================================================================== */
+
+@keyframes fade-coach-marks {
+  0% { opacity: 0; transform: translate(-50%, 20px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  90% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -20px); }
+}
+
+.coach-marks {
+  position: fixed;
+  bottom: 90px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(225, 29, 72, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  z-index: 1000;
+  pointer-events: none;
+  box-shadow: 0 10px 25px rgba(225, 29, 72, 0.35);
+  animation: fade-coach-marks 4s forwards;
+  white-space: nowrap;
+  font-family: var(--font-family);
+}
+
+.custom-context-menu {
+  position: fixed;
+  z-index: 1100;
+  background: rgba(12, 12, 12, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  width: 240px;
+  padding: 6px;
+  animation: scale-in-menu 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-family: var(--font-family);
+}
+
+@keyframes scale-in-menu {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.context-menu-header {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+  font-family: var(--font-family);
+}
+
+.context-menu-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Scrollbar personalizado para el menú contextual */
+.context-menu-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.context-menu-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.context-menu-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.context-menu-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--font-family);
+}
+
+.context-menu-item:hover {
+  background: var(--color-primary);
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.context-menu-no-items {
+  font-size: 12px;
+  color: var(--text-placeholder);
+  padding: 12px;
+  text-align: center;
+  font-family: var(--font-family);
+}
+
+.context-menu-disabled-item {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-error);
+  padding: 12px;
+  text-align: center;
+  line-height: 1.4;
+  font-family: var(--font-family);
+}
+
+/* ==========================================================================
+   RESPONSIVE MOBILE (max-width: 768px)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+
+  /* Layout: columna en vez de fila */
+  .app-container {
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Sidebar: full-width, colapsable con animación fluida */
+  .sidebar {
+    width: 100%;
+    min-width: unset;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    max-height: 75vh;
+    overflow-y: auto;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, border-color 0.3s ease;
+    opacity: 1;
+  }
+
+  .sidebar.sidebar-collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-bottom-color: transparent;
+    pointer-events: none;
+  }
+
+  /* Mostrar botón hamburguesa */
+  .sidebar-toggle-btn {
+    display: flex;
+  }
+
+  /* Header compacto */
+  .app-header {
+    height: auto;
+    min-height: 52px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .header-brand {
+    gap: 6px;
+  }
+
+  .brand-name {
+    font-size: 15px;
+  }
+
+  .header-title-container {
+    max-width: unset;
+    order: 3;
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .bracket-title-input {
+    font-size: 14px;
+    padding: 6px 10px 6px 32px;
+  }
+
+  .no-bracket-title {
+    font-size: 12px;
+  }
+
+  /* Botones del header: solo iconos */
+  .header-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .header-actions .btn span {
+    display: none;
+  }
+
+  /* Sidebar sections: padding reducido */
+  .sidebar-section {
+    padding: 16px;
+  }
+
+  .sidebar-section h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Textarea más compacto */
+  .textarea-participants {
+    height: 120px;
+    font-size: 13px;
+  }
+
+  /* Dropzone más compacto */
+  .dropzone {
+    padding: 14px;
+  }
+
+  .dropzone-text-secondary {
+    display: none;
+  }
+
+  /* Toggle containers */
+  .double-elim-toggle-container {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+
+  /* Teams preview */
+  .teams-preview-list {
+    max-height: 150px;
+  }
+
+  /* Bracket Viewer: touch-action */
+  .bracket-viewer-container {
+    touch-action: none;
+  }
+
+  /* Mensaje sin torneo activo en móvil */
+  .empty-viewer {
+    padding: 80px 24px;
+    justify-content: flex-start;
+  }
+
+  /* Zoom controls: abajo a la derecha */
+  .zoom-controls {
+    bottom: 24px;
+    right: 24px;
+    left: auto;
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .zoom-controls .btn-icon-only {
+    padding: 0;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Ocultar pan indicator (no relevante en touch) */
+  .pan-indicator {
+    display: none;
+  }
+
+  /* Match cards un poco más compactas */
+  .participant-name {
+    font-size: 12px;
+  }
+
+  /* Round headers */
+  .round-header {
+    margin-bottom: 16px;
+    min-height: 40px;
+  }
+
+  .round-header h4 {
+    font-size: 12px;
+  }
+
+  /* Saved brackets compactos */
+  .saved-bracket-item {
+    padding: 10px;
+  }
+
+  /* Action buttons */
+  .action-buttons-grid {
+    gap: 8px;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* ==========================================
+     Sorteo Aleatorio Móvil
+     ========================================== */
+  .shuffle-screen-overlay {
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .shuffle-header {
+    height: auto;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+
+  .shuffle-header h2 {
+    font-size: 15px;
+  }
+
+  .shuffle-header .shuffle-title-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .shuffle-body {
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 10px;
+    overflow: visible;
+  }
+
+  .shuffle-side-panel {
+    width: 100%;
+    min-width: unset;
+    max-height: 180px;
+    padding: 12px;
+  }
+
+  .shuffle-center-stage {
+    order: -1; /* Muestra el bombo central primero */
+    gap: 16px;
+    padding: 10px 0;
+  }
+
+  .stage-title {
+    font-size: 13px;
+    padding: 4px 12px;
+  }
+
+  .slot-machine-container {
+    flex-direction: column; /* Tarjetas verticales */
+    gap: 12px;
+    width: 100%;
+    align-items: center;
+  }
+
+  .slot-drum {
+    width: 100%;
+    max-width: 280px;
+    height: 90px;
+    border-radius: 12px;
+  }
+
+  .slot-content {
+    padding: 10px;
+  }
+
+  .slot-label {
+    font-size: 9px;
+    margin-bottom: 4px;
+  }
+
+  .slot-player-display {
+    font-size: 20px;
+    max-width: 240px;
+  }
+
+  .vs-divider-glow {
+    width: 44px;
+    height: 44px;
+    font-size: 11px;
+    margin: 2px 0;
+  }
+
+  .vs-zap-icon {
+    width: 14px;
+    height: 14px;
+    bottom: -2px;
+  }
+
+  .btn-start-tournament {
+    padding: 12px 24px;
+    font-size: 14px;
+  }
+
+  .drawing-status-text {
+    font-size: 12px;
+  }
+}

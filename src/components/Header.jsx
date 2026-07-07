@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Save, RotateCcw, Download, Upload, Trophy, Edit3, Image } from 'lucide-react';
+import { Save, RotateCcw, Download, Upload, Trophy, Edit3, Image, FileSpreadsheet } from 'lucide-react';
 
 export default function Header({ 
   title, 
@@ -8,29 +8,9 @@ export default function Header({
   onReset, 
   onExport, 
   onExportImage,
-  onImportJson,
+  onExportExcel,
   hasActiveBracket
 }) {
-  const jsonInputRef = useRef(null);
-
-  const handleJsonUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        onImportJson(parsed);
-      } catch (err) {
-        alert("El archivo JSON no es válido.");
-      }
-    };
-    reader.readAsText(file);
-    // Limpiar input
-    if (jsonInputRef.current) jsonInputRef.current.value = '';
-  };
-
   return (
     <header className="app-header">
       <div className="header-brand">
@@ -57,24 +37,6 @@ export default function Header({
       </div>
 
       <div className="header-actions">
-        {/* Input oculto para JSON */}
-        <input 
-          type="file" 
-          ref={jsonInputRef} 
-          style={{ display: 'none' }} 
-          accept=".json"
-          onChange={handleJsonUpload}
-        />
-        
-        <button 
-          className="btn btn-secondary" 
-          onClick={() => jsonInputRef.current?.click()}
-          title="Importar torneo desde archivo JSON"
-        >
-          <Upload size={16} />
-          <span>Importar JSON</span>
-        </button>
-
         {hasActiveBracket && (
           <>
             <button 
@@ -84,6 +46,15 @@ export default function Header({
             >
               <Download size={16} />
               <span>Exportar JSON</span>
+            </button>
+
+            <button 
+              className="btn btn-secondary" 
+              onClick={onExportExcel}
+              title="Exportar torneo actual como archivo Excel .xlsx"
+            >
+              <FileSpreadsheet size={16} />
+              <span>Exportar Excel</span>
             </button>
 
             <button 

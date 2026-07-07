@@ -137,28 +137,30 @@ export default function ShuffleOverlay({ names, onComplete, onClose }) {
           <Shuffle className="shuffle-title-icon" size={24} />
           <h2>SORTEO DE ENFRENTAMIENTOS</h2>
         </div>
-        <button className="btn btn-secondary btn-skip" onClick={handleSkip}>
+        <button className="btn btn-secondary btn-skip" onClick={handleSkip} title="Saltar Animación">
           <FastForward size={16} />
-          Saltar Animación
+          <span>Saltar</span>
         </button>
       </div>
 
       <div className="shuffle-body">
         
-        {/* Panel Izquierdo: Jugadores en el bombo */}
-        <div className="shuffle-side-panel left-panel">
-          <div className="panel-header">
-            <h4>BOMBO DE JUGADORES ({remainingPlayers.length})</h4>
+        {/* Panel Izquierdo: Participantes restantes (se oculta al finalizar) */}
+        {remainingPlayers.length > 0 && (
+          <div className="shuffle-side-panel left-panel">
+            <div className="panel-header">
+              <h4>PARTICIPANTES RESTANTES ({remainingPlayers.length})</h4>
+            </div>
+            <div className="bombo-players-grid">
+              {remainingPlayers.map((name, i) => (
+                <div key={i} className="bombo-player-chip">
+                  <span className="bombo-bullet"></span>
+                  <span className="bombo-player-name">{name}</span>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="bombo-players-grid">
-            {remainingPlayers.map((name, i) => (
-              <div key={i} className="bombo-player-chip">
-                <span className="bombo-bullet"></span>
-                <span className="bombo-player-name">{name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Panel Central: Ruleta Activa */}
         <div className="shuffle-center-stage">

@@ -1,18 +1,25 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, Move, Users, Trophy } from 'lucide-react';
 import MatchNode from './MatchNode';
+import { hasTournamentStarted } from '../utils/bracketLogic';
 
 export default function BracketViewer({ 
   tournament, 
   bracketTitle,
   hoveredId, 
   onHover, 
-  onSelectWinner 
+  onSelectWinner,
+  sidebarOpen,
+  onSwapParticipants
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 50, y: 50 });
   const [isDragging, setIsDragging] = useState(false);
+  const [showCoachMarks, setShowCoachMarks] = useState(false);
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, participant: null, started: false, others: [] });
+  
   const dragStart = useRef({ x: 0, y: 0 });
+  const lastPinchDist = useRef(null);
   const viewerRef = useRef(null);
 
   const matchHeight = 84;    // Altura fija de cada tarjeta de match
@@ -25,11 +32,58 @@ export default function BracketViewer({
     const H = matchHeight;
     const G = baseGap;
     
-    // Si es del cuadro de perdedores, la brecha vertical se duplica cada 2 rondas
     const effectiveIndex = roundType === 'losers' ? Math.floor(roundIndex / 2) : roundIndex;
     const paddingTop = (H + G) * (Math.pow(2, effectiveIndex) - 1) / 2;
     
     return { paddingTop };
+  };
+
+  // Mostrar Coach Marks durante 4 segundos al generar el torneo en móvil
+  useEffect(() => {
+    if (tournament && tournament.winnersRounds?.length > 0 && window.innerWidth <= 768) {
+      setShowCoachMarks(true);
+      const timer = setTimeout(() => {
+        setShowCoachMarks(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [tournament]);
+
+  // Cerrar el menú contextual con cualquier clic global
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(prev => ({ ...prev, visible: false }));
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
+  }, []);
+
+  // Disparador del menú contextual
+  const handleParticipantContextMenu = (e, participant) => {
+    e.preventDefault();
+    if (!tournament) return;
+
+    const started = hasTournamentStarted(tournament);
+    const others = [];
+
+    if (!started) {
+      // Obtener todos los demás participantes en la ronda 0
+      tournament.winnersRounds[0].matches.forEach(match => {
+        if (match.p1 && !match.p1.isBye && match.p1.id !== participant.id) {
+          others.push(match.p1);
+        }
+        if (match.p2 && !match.p2.isBye && match.p2.id !== participant.id) {
+          others.push(match.p2);
+        }
+      });
+    }
+
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      participant,
+      started,
+      others
+    });
   };
 
   // Evento de arrastre (Pan)
@@ -55,13 +109,15 @@ export default function BracketViewer({
   };
 
   // Evento de zoom con rueda
-  const handleWheel = (e) => {
+  const handleWheel = useCallback((e) => {
     e.preventDefault();
     const zoomFactor = 0.08;
     const direction = e.deltaY < 0 ? 1 : -1;
-    const newZoom = Math.min(Math.max(zoom + direction * zoomFactor, 0.2), 2.5);
-    setZoom(parseFloat(newZoom.toFixed(2)));
-  };
+    setZoom(prev => {
+      const newZoom = Math.min(Math.max(prev + direction * zoomFactor, 0.2), 2.5);
+      return parseFloat(newZoom.toFixed(2));
+    });
+  }, []);
 
   // Controles de zoom
   const zoomIn = () => setZoom(prev => Math.min(prev + 0.15, 2.5));
@@ -85,7 +141,44 @@ export default function BracketViewer({
     return () => {
       viewer.removeEventListener('wheel', onWheelEvent);
     };
-  }, [zoom]);
+  }, [handleWheel]);
+
+  // Touch: drag con un dedo, pinch-to-zoom con dos
+  const handleTouchStart = (e) => {
+    if (e.target.closest('.match-card') || e.target.closest('.btn') || e.target.closest('.zoom-controls')) return;
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      dragStart.current = { x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y };
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchDist.current = Math.hypot(dx, dy);
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 1 && isDragging) {
+      e.preventDefault();
+      setPan({
+        x: e.touches[0].clientX - dragStart.current.x,
+        y: e.touches[0].clientY - dragStart.current.y
+      });
+    } else if (e.touches.length === 2 && lastPinchDist.current !== null) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      const delta = dist - lastPinchDist.current;
+      const newZoom = Math.min(Math.max(zoom + delta * 0.005, 0.2), 2.5);
+      setZoom(parseFloat(newZoom.toFixed(2)));
+      lastPinchDist.current = dist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    lastPinchDist.current = null;
+  };
 
   if (!tournament || !tournament.winnersRounds || tournament.winnersRounds.length === 0) {
     return (
@@ -144,6 +237,7 @@ export default function BracketViewer({
               hoveredId={hoveredId}
               onHover={onHover}
               onSelectWinner={onSelectWinner}
+              onParticipantContextMenu={handleParticipantContextMenu}
               dimensions={dimensions}
             />
           ))}
@@ -159,10 +253,13 @@ export default function BracketViewer({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       ref={viewerRef}
     >
       {/* Controles flotantes */}
-      <div className="zoom-controls">
+      <div className={`zoom-controls ${sidebarOpen ? 'hidden' : ''}`}>
         <button className="btn btn-secondary btn-icon-only" onClick={zoomIn} title="Acercar">
           <ZoomIn size={16} />
         </button>
@@ -271,6 +368,7 @@ export default function BracketViewer({
                       hoveredId={hoveredId}
                       onHover={onHover}
                       onSelectWinner={onSelectWinner}
+                      onParticipantContextMenu={handleParticipantContextMenu}
                       dimensions={dimensions}
                     />
                   </div>
@@ -287,6 +385,55 @@ export default function BracketViewer({
         <div className="export-powered">Generado con xd_brackets</div>
       </div>
       </div>
+
+      {/* Guía Rápida de Gestos (Coach Marks) en Móvil */}
+      {showCoachMarks && (
+        <div className="coach-marks">
+          Desliza para mover • Pellizca para hacer zoom
+        </div>
+      )}
+
+      {/* Menú Contextual para Intercambiar Semillas / Jugadores */}
+      {contextMenu.visible && (
+        <div 
+          className="custom-context-menu"
+          style={{
+            top: `${contextMenu.y}px`,
+            left: `${contextMenu.x}px`
+          }}
+          onClick={(e) => e.stopPropagation()} // Prevenir cierre inmediato al hacer clic dentro
+        >
+          {contextMenu.started ? (
+            <div className="context-menu-disabled-item">
+              No se puede editar, realize otra bracket
+            </div>
+          ) : (
+            <>
+              <div className="context-menu-header">
+                Intercambiar a <strong>{contextMenu.participant.name}</strong> con:
+              </div>
+              <div className="context-menu-list">
+                {contextMenu.others.length === 0 ? (
+                  <div className="context-menu-no-items">No hay otros participantes</div>
+                ) : (
+                  contextMenu.others.map(other => (
+                    <button
+                      key={other.id}
+                      className="context-menu-item"
+                      onClick={() => {
+                        onSwapParticipants(contextMenu.participant.id, other.id);
+                        setContextMenu(prev => ({ ...prev, visible: false }));
+                      }}
+                    >
+                      {other.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

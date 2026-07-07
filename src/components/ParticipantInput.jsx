@@ -1,14 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { Users, Upload, Shuffle, Trash2, Play, FileSpreadsheet, AlertCircle, UsersRound, PenLine } from 'lucide-react';
+import { Users, Shuffle, Trash2, Play, FileSpreadsheet, AlertCircle, UsersRound, PenLine } from 'lucide-react';
 import { parseExcelParticipants } from '../utils/excelParser';
 
-export default function ParticipantInput({ onGenerate, onShuffleRequest, currentParticipantsCount }) {
+export default function ParticipantInput({ onGenerate, onShuffleRequest, onImportJson }) {
   const [inputText, setInputText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(null);
   const [isDoubleElim, setIsDoubleElim] = useState(false);
   const [is2v2, setIs2v2] = useState(false);
   const [canNameTeams, setCanNameTeams] = useState(false);
+  const [randomize, setRandomize] = useState(true);
   const [teamNames, setTeamNames] = useState({}); // { 0: "Los Invencibles", 1: "Team Rocket", ... }
   
   const fileInputRef = useRef(null);
@@ -30,14 +31,26 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
     return teams;
   };
 
+  // Mezcla aleatoria (Fisher-Yates)
+  const shuffleArray = (arr) => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+
   // Construye los nombres finales de equipos para el bracket
-  const buildTeamNamesForBracket = (names) => {
-    const teams = getTeamsFromNames(names);
+  const buildTeamNamesForBracket = (names, randomize = false) => {
+    const ordered = randomize ? shuffleArray(names) : names;
+    const teams = getTeamsFromNames(ordered);
     return teams.map((team, i) => {
       if (canNameTeams && teamNames[i]?.trim()) {
         return teamNames[i].trim();
       }
-      return `Equipo ${i + 1}`;
+      // ponytail: nombre por defecto = "Jugador1-Jugador2"
+      return `${team.members[0]}-${team.members[1]}`;
     });
   };
 
@@ -57,18 +70,39 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
     setError(null);
   };
 
-  // Manejo de archivo Excel
+  // Procesa e importa el archivo según su tipo (.xlsx o .json)
+  const handleImportFile = async (file) => {
+    if (!file) return;
+    const fileExt = file.name.split('.').pop().toLowerCase();
+    
+    if (fileExt === 'json') {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsed = JSON.parse(event.target.result);
+          onImportJson(parsed);
+        } catch (err) {
+          setError("El archivo JSON no es válido.");
+        }
+      };
+      reader.readAsText(file);
+    } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+      try {
+        const names = await parseExcelParticipants(file);
+        processImportedNames(names);
+      } catch (err) {
+        setError(err.message);
+      }
+    } else {
+      setError("Formato de archivo no soportado. Utiliza .xlsx, .xls o .json.");
+    }
+  };
+
+  // Manejo de archivo importado por click
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
-    try {
-      const names = await parseExcelParticipants(file);
-      processImportedNames(names);
-    } catch (err) {
-      setError(err.message);
-    }
-    // Limpiar input de archivo
+    await handleImportFile(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -87,19 +121,7 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
     
     const file = e.dataTransfer.files[0];
     if (!file) return;
-
-    const fileExt = file.name.split('.').pop().toLowerCase();
-    if (fileExt !== 'xlsx') {
-      setError("Solo se admiten archivos en formato Excel (.xlsx).");
-      return;
-    }
-
-    try {
-      const names = await parseExcelParticipants(file);
-      processImportedNames(names);
-    } catch (err) {
-      setError(err.message);
-    }
+    await handleImportFile(file);
   };
 
   const handleClear = () => {
@@ -134,8 +156,7 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
     setError(null);
 
     if (is2v2) {
-      // ponytail: shuffle individual names first, then pair into teams
-      const bracketNames = buildTeamNamesForBracket(names);
+      const bracketNames = buildTeamNamesForBracket(names, randomize);
       onShuffleRequest(bracketNames, isDoubleElim, true);
     } else {
       onShuffleRequest(names, isDoubleElim, false);
@@ -148,10 +169,11 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
     setError(null);
 
     if (is2v2) {
-      const bracketNames = buildTeamNamesForBracket(names);
+      const bracketNames = buildTeamNamesForBracket(names, randomize);
       onGenerate(bracketNames, isDoubleElim, true);
     } else {
-      onGenerate(names, isDoubleElim, false);
+      const finalNames = randomize ? shuffleArray(names) : names;
+      onGenerate(finalNames, isDoubleElim, false);
     }
   };
 
@@ -170,7 +192,6 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
         Participantes ({currentNamesList.length})
       </h3>
 
-      {/* Zona de Drop para Excel */}
       <div 
         className={`dropzone ${isDragging ? 'dropzone-active' : ''}`}
         onDragOver={handleDragOver}
@@ -182,11 +203,11 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
           type="file" 
           ref={fileInputRef} 
           style={{ display: 'none' }} 
-          accept=".xlsx"
+          accept=".xlsx, .xls, .json"
           onChange={handleFileChange}
         />
         <FileSpreadsheet className="dropzone-icon" size={24} />
-        <p className="dropzone-text-primary">Importar desde Excel (.xlsx)</p>
+        <p className="dropzone-text-primary">Importar desde Excel (.xlsx) / JSON</p>
         <p className="dropzone-text-secondary">Arrastra tu archivo aquí o haz clic</p>
       </div>
 
@@ -254,10 +275,26 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
         </div>
       )}
 
+      {/* Switch para sorteo aleatorio (siempre visible) */}
+      <div className="double-elim-toggle-container">
+        <label className="switch">
+          <input 
+            type="checkbox" 
+            checked={randomize}
+            onChange={(e) => setRandomize(e.target.checked)}
+          />
+          <span className="slider round"></span>
+        </label>
+        <span className="switch-label">
+          <Shuffle size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+          Sorteo aleatorio
+        </span>
+      </div>
+
       {/* Preview de equipos en modo 2v2 */}
       {is2v2 && teams.length > 0 && (
         <div className="teams-preview">
-          <label className="input-label">Equipos formados ({teams.length})</label>
+          <label className="input-label">Equipos formados ({teams.length}){randomize && <em style={{fontWeight: 400, fontSize: '11px', color: 'var(--text-muted)'}}> — se mezclan al generar</em>}</label>
           <div className="teams-preview-list">
             {teams.map((team, i) => (
               <div key={i} className="team-preview-item">
@@ -266,12 +303,12 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
                     <input
                       type="text"
                       className="team-name-input"
-                      placeholder={`Equipo ${i + 1}`}
+                      placeholder={`${team.members[0]}-${team.members[1]}`}
                       value={teamNames[i] || ''}
                       onChange={(e) => handleTeamNameChange(i, e.target.value)}
                     />
                   ) : (
-                    <span className="team-name-default">Equipo {i + 1}</span>
+                    <span className="team-name-default">{team.members[0]}-{team.members[1]}</span>
                   )}
                 </div>
                 <div className="team-members">
@@ -310,28 +347,31 @@ export default function ParticipantInput({ onGenerate, onShuffleRequest, current
           className="btn btn-secondary" 
           onClick={handleClear}
           disabled={currentNamesList.length === 0}
+          style={{ gridColumn: randomize ? 'span 1' : 'span 2' }}
         >
           <Trash2 size={16} />
           Limpiar
         </button>
-        <button 
-          className="btn btn-secondary" 
-          onClick={handleGenerateDirect}
-          disabled={is2v2 ? teams.length < 2 : currentNamesList.length < 2}
-        >
-          <Play size={16} />
-          Ordenar
-        </button>
+        {randomize && (
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleGenerateDirect}
+            disabled={is2v2 ? teams.length < 2 : currentNamesList.length < 2}
+          >
+            <Play size={16} />
+            Ordenar
+          </button>
+        )}
       </div>
 
       <button 
         className="btn btn-primary w-full pulse-active"
         style={{ marginTop: '12px', width: '100%' }}
-        onClick={handleShuffleAndGenerate}
+        onClick={randomize ? handleShuffleAndGenerate : handleGenerateDirect}
         disabled={is2v2 ? teams.length < 2 : currentNamesList.length < 2}
       >
-        <Shuffle size={16} />
-        Aleatorizar y Crear Bracket
+        {randomize ? <Shuffle size={16} /> : <Play size={16} />}
+        {randomize ? "Aleatorizar y Crear Bracket" : "Crear Bracket"}
       </button>
     </div>
   );

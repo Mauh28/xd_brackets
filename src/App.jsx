@@ -3,9 +3,11 @@ import Header from './components/Header';
 import ParticipantInput from './components/ParticipantInput';
 import SavedBrackets from './components/SavedBrackets';
 import BracketViewer from './components/BracketViewer';
-import { generateTournament, updateTournamentMatchWinner } from './utils/bracketLogic';
+import { generateTournament, updateTournamentMatchWinner, swapTournamentParticipants } from './utils/bracketLogic';
+import { exportExcelTournament } from './utils/excelParser';
 import ShuffleOverlay from './components/ShuffleOverlay';
 import { toPng } from 'html-to-image';
+import { Menu, X } from 'lucide-react';
 
 export default function App() {
   const [tournament, setTournament] = useState(null);
@@ -15,6 +17,7 @@ export default function App() {
   const [hoveredParticipantId, setHoveredParticipantId] = useState(null);
   const [savedBrackets, setSavedBrackets] = useState([]);
   const [currentBracketId, setCurrentBracketId] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Cargar brackets guardadas de localStorage al iniciar
   useEffect(() => {
@@ -47,6 +50,9 @@ export default function App() {
     
     // Resetear ID actual de guardado ya que es un torneo nuevo
     setCurrentBracketId(null);
+
+    // Auto-colapsar sidebar en móvil al generar
+    if (window.innerWidth <= 768) setSidebarOpen(false);
   };
 
   const [is2v2Temp, setIs2v2Temp] = useState(false);
@@ -176,6 +182,19 @@ export default function App() {
     downloadAnchor.remove();
   };
 
+  // Acción: Exportar como Excel (.xlsx)
+  const handleExportExcel = () => {
+    if (!tournament) return;
+    exportExcelTournament(tournament, bracketTitle);
+  };
+
+  // Acción: Intercambiar participantes en el cuadro de siembra inicial (Ronda 0)
+  const handleSwapParticipants = (p1Id, p2Id) => {
+    if (!tournament) return;
+    const updated = swapTournamentParticipants(tournament, p1Id, p2Id);
+    setTournament(updated);
+  };
+
   // Acción: Exportar bracket como imagen PNG (usando clase temporal en el DOM para evitar clones vacíos)
   const handleExportImage = () => {
     const wrapper = document.getElementById('bracket-export-area');
@@ -241,25 +260,26 @@ export default function App() {
         onReset={handleReset}
         onExport={handleExport}
         onExportImage={handleExportImage}
-        onImportJson={handleImportJson}
+        onExportExcel={handleExportExcel}
         hasActiveBracket={hasActiveBracket}
       />
 
       <div className="app-container">
+        {/* Botón hamburguesa para móvil */}
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setSidebarOpen(prev => !prev)}
+          aria-label={sidebarOpen ? 'Cerrar panel' : 'Abrir panel'}
+        >
+          {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
+
         {/* Panel lateral izquierdo */}
-        <aside className="sidebar">
+        <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`}>
           <ParticipantInput 
             onGenerate={handleGenerate}
             onShuffleRequest={handleShuffleRequest}
-            currentParticipantsCount={
-              hasActiveBracket 
-                ? tournament.winnersRounds[0].matches.reduce((acc, m) => {
-                    if (m.p1 && !m.p1.isBye) acc++;
-                    if (m.p2 && !m.p2.isBye) acc++;
-                    return acc;
-                  }, 0)
-                : 0
-            }
+            onImportJson={handleImportJson}
           />
           <SavedBrackets 
             savedBrackets={savedBrackets}
@@ -276,6 +296,8 @@ export default function App() {
             hoveredId={hoveredParticipantId}
             onHover={setHoveredParticipantId}
             onSelectWinner={handleSelectWinner}
+            sidebarOpen={sidebarOpen}
+            onSwapParticipants={handleSwapParticipants}
           />
         </main>
       </div>
