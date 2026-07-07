@@ -187,6 +187,7 @@ export default function BracketViewer({
           <div className="export-brand">xd_brackets</div>
           <div className="export-title">{bracketTitle || 'Torneo sin título'}</div>
           <div className="export-subtitle">
+            {tournament.is2v2 ? '2v2 — ' : ''}
             {isDoubleElimination ? 'Doble Eliminación (Con Perdedores)' : 'Eliminación Directa'}
           </div>
         </div>

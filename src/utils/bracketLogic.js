@@ -13,9 +13,10 @@ export const generateParticipantId = () => Math.random().toString(36).substr(2, 
  * @param {boolean} isDoubleElimination - Indica si se incluye bracket de perdedores.
  * @returns {Object} Objeto con la estructura completa del torneo.
  */
-export const generateTournament = (names, isDoubleElimination = false) => {
+export const generateTournament = (names, isDoubleElimination = false, is2v2 = false) => {
   if (!names || names.length === 0) {
     return {
+      is2v2,
       isDoubleElimination,
       winnersRounds: [],
       losersRounds: [],
@@ -133,6 +134,7 @@ export const generateTournament = (names, isDoubleElimination = false) => {
   propagateTournamentWinners(winnersRounds, losersRounds, grandFinal, isDoubleElimination);
 
   return {
+    is2v2,
     isDoubleElimination,
     winnersRounds,
     losersRounds,

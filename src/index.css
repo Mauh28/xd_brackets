@@ -1500,8 +1500,84 @@ input:checked + .slider:before {
   font-family: var(--font-family) !important;
 }
 
+/* ==========================================
+   2v2 Teams Preview
+   ========================================== */
 
+.teams-preview {
+  margin-bottom: 16px;
+}
 
+.teams-preview .input-label {
+  margin-bottom: 8px;
+}
 
+.teams-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.team-preview-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  transition: border-color 0.2s ease;
+}
+
+.team-preview-item:hover {
+  border-color: var(--color-primary);
+}
+
+.team-preview-header {
+  margin-bottom: 6px;
+}
+
+.team-name-default {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.team-name-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.team-name-input:focus {
+  border-color: var(--color-primary);
+}
+
+.team-name-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.team-members {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.team-separator {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 11px;
+}
 
 

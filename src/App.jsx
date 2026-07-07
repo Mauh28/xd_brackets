@@ -34,23 +34,28 @@ export default function App() {
     localStorage.setItem('xd_brackets_saved', JSON.stringify(newSavedList));
   };
 
-  // Acción: Generar nueva bracket (soporta simple y doble eliminación)
-  const handleGenerate = (names, isDoubleElim = false) => {
-    const generated = generateTournament(names, isDoubleElim);
+  // Acción: Generar nueva bracket (soporta simple y doble eliminación, 1v1 y 2v2)
+  const handleGenerate = (names, isDoubleElim = false, is2v2 = false) => {
+    const generated = generateTournament(names, isDoubleElim, is2v2);
     setTournament(generated);
     
     const count = names.length;
-    const defaultTitle = `Torneo de ${count} Participantes`;
+    const defaultTitle = is2v2
+      ? `Torneo 2v2 de ${count} Equipos`
+      : `Torneo de ${count} Participantes`;
     setBracketTitle(defaultTitle);
     
     // Resetear ID actual de guardado ya que es un torneo nuevo
     setCurrentBracketId(null);
   };
 
-  // Acción: Iniciar sorteo interactivo guardando el flag temporalmente
-  const handleShuffleRequest = (names, isDoubleElim) => {
+  const [is2v2Temp, setIs2v2Temp] = useState(false);
+
+  // Acción: Iniciar sorteo interactivo guardando los flags temporalmente
+  const handleShuffleRequest = (names, isDoubleElim, is2v2 = false) => {
     setShuffleList(names);
     setIsDoubleElimTemp(isDoubleElim);
+    setIs2v2Temp(is2v2);
   };
 
   // Acción: Avanzar participante
@@ -73,7 +78,7 @@ export default function App() {
       if (match.p2 && !match.p2.isBye) initialNames.push(match.p2.name);
     });
 
-    const resetTournament = generateTournament(initialNames, tournament.isDoubleElimination);
+    const resetTournament = generateTournament(initialNames, tournament.isDoubleElimination, tournament.is2v2);
     setTournament(resetTournament);
   };
 
@@ -280,7 +285,7 @@ export default function App() {
           names={shuffleList}
           onComplete={(shuffled) => {
             setShuffleList(null);
-            handleGenerate(shuffled, isDoubleElimTemp);
+            handleGenerate(shuffled, isDoubleElimTemp, is2v2Temp);
           }}
           onClose={() => setShuffleList(null)}
         />
